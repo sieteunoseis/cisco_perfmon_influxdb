@@ -36,7 +36,8 @@ Run from the commandline
 pm2 start perfmon_arg.py --interpreter python3 --name cisco_callmanager --cron '*/5 * * * *' --no-autorestart -- -ip 10.10.20.1 10.10.20.2   -u administrator -p ciscopsdt -c 'Cisco CallManager'
 ```
 ### Graph with Grafana
-![](https://github.com/sieteunoseis/cisco_risport_influxdb/blob/master/images/Grafana2.png)
+![](https://github.com/sieteunoseis/cisco_perfmon_influxdb/blob/master/images/Grafana1.png)
+![](https://github.com/sieteunoseis/cisco_perfmon_influxdb/blob/master/images/Grafana2.png)
 
 ### Useful PM2 commands
 
