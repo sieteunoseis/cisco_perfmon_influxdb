@@ -37,7 +37,6 @@ pm2 start perfmon_arg.py --interpreter python3 --name cisco_callmanager --cron '
 ```
 ### Graph with Grafana
 ![](https://github.com/sieteunoseis/cisco_perfmon_influxdb/blob/master/images/Grafana1.png)
-![](https://github.com/sieteunoseis/cisco_perfmon_influxdb/blob/master/images/Grafana2.png)
 
 ### Useful PM2 commands
 
