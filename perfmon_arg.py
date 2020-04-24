@@ -1,35 +1,7 @@
 #!/usr/bin/python3
-"""Serviceability Perfmon <perfmonCollectCounterData> sample script
-
-Performs a <perfmonCollectCounterData> request for the 'Cisco CallManager' object
-using the Zeep SOAP library, and parses/prints the results in a simple table output.
-
-Dependency Installation:
-
-	$ pip3 install -r requirements.txt
-
-Copyright (c) 2018 Cisco and/or its affiliates.
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 from lxml import etree
 from requests import Session
 from requests.auth import HTTPBasicAuth
-
 from zeep import Client, Settings, Plugin
 from zeep.transports import Transport
 from zeep.exceptions import Fault
@@ -43,9 +15,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Change to true to enable output of request/response headers and XML
 DEBUG = False
-
-# The WSDL is a local file in the working directory, see README
-WSDL_FILE = '/opt/nested/scripts/schema/PerfmonService.wsdl'
 
 # This class lets you view the incoming and outgoing HTTP headers and XML
 
@@ -69,6 +38,8 @@ class MyLoggingPlugin( Plugin ):
 def main(CUCM_ADDRESSES,USERNAME,PASSWORD,COUNTER_OBJECT):
 	
 	for server in CUCM_ADDRESSES:
+		
+		WSDL_FILE = 'https://' + server + ':8443/perfmonservice2/services/PerfmonService.wsdl'
 	
 		# The first step is to create a SOAP client session
 
@@ -97,7 +68,11 @@ def main(CUCM_ADDRESSES,USERNAME,PASSWORD,COUNTER_OBJECT):
 		plugin = [ MyLoggingPlugin() ] if DEBUG else [ ]
 
 		# Create the Zeep client with the specified settings
-		client = Client( WSDL_FILE, settings = settings, transport = transport, plugins = plugin )
+		try:
+			client = Client( WSDL_FILE, settings = settings, transport = transport, plugins = plugin )
+		except Exception as e:
+			print(e)
+			break
 
 		# Create the Zeep service binding to the Perfmon SOAP service at the specified CUCM
 		service = client.create_service(
@@ -145,17 +120,16 @@ def main(CUCM_ADDRESSES,USERNAME,PASSWORD,COUNTER_OBJECT):
 					"tags":{
 						"server": counterArr[0],
 						"counter": counterArr[1],
-						"instance": counterArr[2],  
 					},
 					"fields": {
-						"value": item.Value
+						counterArr[2] : item.Value
 					}
 				}
 			]
 
 			
-			client = InfluxDBClient('170.2.96.200', 8086, '', '', 'rtmt')
-			client.write_points(json_body)
+			influx_client = InfluxDBClient('localhost', 8086, '', '', 'cisco_perfmon')
+			influx_client.write_points(json_body)
 			
 			if DEBUG == True:
 				result = client.query("select LAST(*) from " + json_body[0]['measurement'])
@@ -170,4 +144,8 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	
+	print ("Starting collection of Perfmon stats")
+	
 	main(args.hostname,args.username,args.password,args.counter)
+	
+	print ("Finishing collecting Perfmon stats")
